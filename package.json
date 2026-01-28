@@ -2,6 +2,7 @@
   "name": "shortlink",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "concurrently \"pnpm dev:frontend\" \"pnpm dev:api\"",
     "dev:tunnel": "concurrently \"pnpm dev\" \"tsx scripts/dev-with-tunnel.ts\"",
