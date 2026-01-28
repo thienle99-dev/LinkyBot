@@ -1,12 +1,12 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import {
-  APP_BASE_URL,
   TELEGRAM_BOT_TOKEN,
   TELEGRAM_WEBHOOK_SECRET_TOKEN
-} from "../src/config/env";
-import { isValidHttpUrl } from "../src/lib/urlValidator";
-import { buildShortUrl, getShortLink, saveShortLink } from "../src/lib/db";
-import { generateShortCode } from "../src/lib/shortCode";
+} from "../lib/config";
+import { TELEGRAM_BOT_LINK, TELEGRAM_BOT_USERNAME } from "../lib/telegram";
+import { isValidHttpUrl } from "../lib/urlValidator";
+import { buildShortUrl, getShortLink, saveShortLink } from "../lib/db";
+import { generateShortCode } from "../lib/shortCode";
 
 interface TelegramUser {
   id: number;
@@ -65,9 +65,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await sendTelegramMessage(
       message.chat.id,
       [
-        "👋 Welcome to Shortlink Bot!",
+        `👋 Welcome to @${TELEGRAM_BOT_USERNAME}!`,
         "",
         "Send me any URL and I will reply with a short link.",
+        "",
+        `Bot link: ${TELEGRAM_BOT_LINK}`,
         "",
         "Example:",
         "https://example.com/my/very/long/url"
@@ -80,13 +82,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await sendTelegramMessage(
       message.chat.id,
       [
-        "ℹ️ How to use Shortlink Bot:",
+        "ℹ️ How to use this bot:",
         "",
-        "1. Send me a message that contains a valid http(s) URL.",
+        "1. Send a message that contains a valid http(s) URL.",
         "2. I will validate it, create a short link, and reply back.",
         "",
-        "Example:",
-        "https://example.com/my/very/long/url"
+        `Bot: @${TELEGRAM_BOT_USERNAME}`,
+        `Link: ${TELEGRAM_BOT_LINK}`
       ].join("\n")
     );
     return res.status(200).json({ ok: true });

@@ -24,6 +24,7 @@
   "include": [
     "src/**/*",
     "api/**/*",
+    "lib/**/*",
     "env.d.ts"
   ]
 }
