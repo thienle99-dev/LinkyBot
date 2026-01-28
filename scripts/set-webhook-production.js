@@ -1,7 +1,7 @@
 require("dotenv").config();
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const PRODUCTION_URL = process.env.APP_BASE_URL || "https://slb0.vercel.app";
+const PRODUCTION_URL = process.env.APP_BASE_URL || "https://sl0.vercel.app";
 const WEBHOOK_URL = `${PRODUCTION_URL}/api/telegram-webhook`;
 const SECRET_TOKEN = process.env.TELEGRAM_WEBHOOK_SECRET_TOKEN;
 
