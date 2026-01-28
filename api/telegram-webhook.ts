@@ -2,11 +2,11 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import {
   TELEGRAM_BOT_TOKEN,
   TELEGRAM_WEBHOOK_SECRET_TOKEN
-} from "../lib/config";
-import { TELEGRAM_BOT_LINK, TELEGRAM_BOT_USERNAME } from "../lib/telegram";
-import { isValidHttpUrl } from "../lib/urlValidator";
-import { buildShortUrl, getShortLink, saveShortLink } from "../lib/db";
-import { generateShortCode } from "../lib/shortCode";
+} from "./_lib/config";
+import { TELEGRAM_BOT_LINK, TELEGRAM_BOT_USERNAME } from "./_lib/telegram";
+import { isValidHttpUrl } from "./_lib/urlValidator";
+import { buildShortUrl, getShortLink, saveShortLink } from "./_lib/db";
+import { generateShortCode } from "./_lib/shortCode";
 
 interface TelegramUser {
   id: number;

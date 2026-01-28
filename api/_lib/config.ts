@@ -15,3 +15,4 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   // here we just rely on runtime checks inside the handlers.
   console.warn("Supabase credentials are not fully configured.");
 }
+
