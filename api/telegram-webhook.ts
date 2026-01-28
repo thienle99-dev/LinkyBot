@@ -3,10 +3,10 @@ import {
   APP_BASE_URL,
   TELEGRAM_BOT_TOKEN,
   TELEGRAM_WEBHOOK_SECRET_TOKEN
-} from "../config/env";
-import { isValidHttpUrl } from "../lib/urlValidator";
-import { buildShortUrl, getShortLink, saveShortLink } from "../lib/db";
-import { generateShortCode } from "../lib/shortCode";
+} from "../src/config/env";
+import { isValidHttpUrl } from "../src/lib/urlValidator";
+import { buildShortUrl, getShortLink, saveShortLink } from "../src/lib/db";
+import { generateShortCode } from "../src/lib/shortCode";
 
 interface TelegramUser {
   id: number;
