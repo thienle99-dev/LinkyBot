@@ -9,7 +9,7 @@ Your task is to **design and implement a URL Shortener system with Telegram Bot 
 Build a URL Shortener service that works via:
 
 - **Web UI**: Vue 3
-- **Telegram Bot**: create short links via chat
+- **Telegram Bot**: create short links via chat using the bot `@t_shortlink_bot` (`https://t.me/t_shortlink_bot`)
 
 Users should be able to:
 

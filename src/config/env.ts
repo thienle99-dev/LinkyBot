@@ -3,7 +3,7 @@ export const TELEGRAM_WEBHOOK_SECRET_TOKEN =
   process.env.TELEGRAM_WEBHOOK_SECRET_TOKEN ?? "";
 
 export const APP_BASE_URL =
-  process.env.APP_BASE_URL ?? "https://sl0.vercel.app";
+  process.env.APP_BASE_URL ?? "https://slb0.vercel.app";
 
 export const SUPABASE_URL =
   process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";

@@ -36,7 +36,7 @@
             </p>
             <pre class="text-xs bg-slate-950/60 border border-slate-800 rounded-xl p-3 overflow-x-auto">
 <code>✅ Short link created:
-https://your-domain.vercel.app/abc123</code>
+https://sl0.vercel.app/abc123</code>
             </pre>
           </article>
         </section>

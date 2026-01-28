@@ -3,9 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"pnpm dev:frontend\" \"pnpm dev:api\"",
+    "dev:tunnel": "concurrently \"pnpm dev\" \"tsx scripts/dev-with-tunnel.ts\"",
+    "dev:frontend": "vite",
+    "dev:api": "vercel dev --listen 3001",
     "build": "vite build",
     "preview": "vite preview",
+    "test:bot": "tsx scripts/test-bot.ts",
+    "webhook:set": "node scripts/set-webhook-production.js",
     "lint": "eslint . --ext .ts,.tsx,.vue --max-warnings=0",
     "typecheck": "tsc --noEmit"
   },
@@ -16,6 +21,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
+    "vercel": "^39.3.0",
     "@vercel/node": "^3.2.0",
     "@vitejs/plugin-vue": "^5.1.4",
     "autoprefixer": "^10.4.20",
@@ -25,6 +31,9 @@
     "pg": "^8.17.2",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.15",
+    "concurrently": "^9.1.2",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.7.1",
     "typescript": "^5.6.3",
     "vite": "^5.4.10"
   }
