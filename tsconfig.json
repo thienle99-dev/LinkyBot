@@ -9,9 +9,19 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "esModuleInterop": true,
-    "lib": ["ESNext", "DOM"],
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
     "skipLibCheck": true,
-    "types": ["vite/client", "@vercel/node"]
+    "types": [
+      "vite/client",
+      "@vercel/node"
+    ]
   },
-  "include": ["src/**/*", "env.d.ts"]
+  "include": [
+    "src/**/*",
+    "api/**/*",
+    "env.d.ts"
+  ]
 }
