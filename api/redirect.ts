@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { getShortLink } from "./_lib/db";
+import { getShortLink } from "./_lib/db.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const code = (req.query.code as string | undefined) ?? undefined;

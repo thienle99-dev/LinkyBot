@@ -18,6 +18,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.93.2",
     "axios": "^1.7.9",
+    "telegraf": "^4.16.3",
     "vue": "^3.5.11"
   },
   "devDependencies": {

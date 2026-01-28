@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { generateShortCode } from "./_lib/shortCode";
-import { isValidHttpUrl } from "./_lib/urlValidator";
-import { buildShortUrl, getShortLink, saveShortLink } from "./_lib/db";
+import { generateShortCode } from "./_lib/shortCode.js";
+import { isValidHttpUrl } from "./_lib/urlValidator.js";
+import { buildShortUrl, getShortLink, saveShortLink } from "./_lib/db.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {

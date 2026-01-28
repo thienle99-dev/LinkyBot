@@ -1,35 +1,80 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { Telegraf } from "telegraf";
+import type { Context } from "telegraf";
 import {
   TELEGRAM_BOT_TOKEN,
   TELEGRAM_WEBHOOK_SECRET_TOKEN
-} from "./_lib/config";
-import { TELEGRAM_BOT_LINK, TELEGRAM_BOT_USERNAME } from "./_lib/telegram";
-import { isValidHttpUrl } from "./_lib/urlValidator";
-import { buildShortUrl, getShortLink, saveShortLink } from "./_lib/db";
-import { generateShortCode } from "./_lib/shortCode";
-
-interface TelegramUser {
-  id: number;
-}
-
-interface TelegramChat {
-  id: number;
-}
-
-interface TelegramMessage {
-  message_id: number;
-  from?: TelegramUser;
-  chat: TelegramChat;
-  text?: string;
-}
-
-interface TelegramUpdate {
-  update_id: number;
-  message?: TelegramMessage;
-}
+} from "./_lib/config.js";
+import { TELEGRAM_BOT_LINK, TELEGRAM_BOT_USERNAME } from "./_lib/telegram.js";
+import { isValidHttpUrl } from "./_lib/urlValidator.js";
+import { buildShortUrl, getShortLink, saveShortLink } from "./_lib/db.js";
+import { generateShortCode } from "./_lib/shortCode.js";
 
 const URL_REGEX =
   /(https?:\/\/[^\s/$.?#].[^\s]*)/i;
+
+const bot = new Telegraf(TELEGRAM_BOT_TOKEN);
+
+bot.start(async (ctx: Context) => {
+  await ctx.reply(
+    [
+      `👋 Welcome to @${TELEGRAM_BOT_USERNAME}!`,
+      "",
+      "Send me any URL and I will reply with a short link.",
+      "",
+      `Bot link: ${TELEGRAM_BOT_LINK}`,
+      "",
+      "Example:",
+      "https://example.com/my/very/long/url"
+    ].join("\n"),
+    { link_preview_options: { is_disabled: true } } as any
+  );
+});
+
+bot.help(async (ctx: Context) => {
+  await ctx.reply(
+    [
+      "ℹ️ How to use this bot:",
+      "",
+      "1. Send a message that contains a valid http(s) URL.",
+      "2. I will validate it, create a short link, and reply back.",
+      "",
+      `Bot: @${TELEGRAM_BOT_USERNAME}`,
+      `Link: ${TELEGRAM_BOT_LINK}`
+    ].join("\n"),
+    { link_preview_options: { is_disabled: true } } as any
+  );
+});
+
+bot.on("text", async (ctx: Context) => {
+  const text = ctx.message?.text ?? "";
+  if (!text) return;
+
+  // Let /start and /help be handled by command handlers above
+  if (text.startsWith("/start") || text.startsWith("/help")) return;
+
+  const match = text.match(URL_REGEX);
+  const candidateUrl = match?.[1];
+
+  if (!candidateUrl || !isValidHttpUrl(candidateUrl)) {
+    await ctx.reply("❌ Please send a valid http(s) URL so I can create a short link.");
+    return;
+  }
+
+  let code = generateShortCode();
+  for (let i = 0; i < 3; i++) {
+    const existing = await getShortLink(code);
+    if (!existing) break;
+    code = generateShortCode();
+  }
+
+  await saveShortLink(code, candidateUrl, "telegram");
+  const shortUrl = buildShortUrl(code);
+
+  await ctx.reply(`✅ Short link created:\n${shortUrl}`, {
+    link_preview_options: { is_disabled: true }
+  } as any);
+});
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
@@ -52,90 +97,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
-  const update = req.body as TelegramUpdate;
-
-  if (!update || !update.message) {
-    return res.status(200).json({ ok: true });
-  }
-
-  const { message } = update;
-  const text = message.text ?? "";
-
-  if (text.startsWith("/start")) {
-    await sendTelegramMessage(
-      message.chat.id,
-      [
-        `👋 Welcome to @${TELEGRAM_BOT_USERNAME}!`,
-        "",
-        "Send me any URL and I will reply with a short link.",
-        "",
-        `Bot link: ${TELEGRAM_BOT_LINK}`,
-        "",
-        "Example:",
-        "https://example.com/my/very/long/url"
-      ].join("\n")
-    );
-    return res.status(200).json({ ok: true });
-  }
-
-  if (text.startsWith("/help")) {
-    await sendTelegramMessage(
-      message.chat.id,
-      [
-        "ℹ️ How to use this bot:",
-        "",
-        "1. Send a message that contains a valid http(s) URL.",
-        "2. I will validate it, create a short link, and reply back.",
-        "",
-        `Bot: @${TELEGRAM_BOT_USERNAME}`,
-        `Link: ${TELEGRAM_BOT_LINK}`
-      ].join("\n")
-    );
-    return res.status(200).json({ ok: true });
-  }
-
-  const match = text.match(URL_REGEX);
-  const candidateUrl = match?.[1];
-
-  if (!candidateUrl || !isValidHttpUrl(candidateUrl)) {
-    await sendTelegramMessage(
-      message.chat.id,
-      "❌ Please send a valid http(s) URL so I can create a short link."
-    );
-    return res.status(200).json({ ok: true });
-  }
-
-  let code = generateShortCode();
-  for (let i = 0; i < 3; i++) {
-    const existing = await getShortLink(code);
-    if (!existing) break;
-    code = generateShortCode();
-  }
-
-  await saveShortLink(code, candidateUrl, "telegram");
-
-  const shortUrl = buildShortUrl(code);
-
-  await sendTelegramMessage(
-    message.chat.id,
-    `✅ Short link created:\n${shortUrl}`
-  );
-
+  // Telegraf expects a Telegram Update object.
+  await bot.handleUpdate(req.body as any);
   return res.status(200).json({ ok: true });
-}
-
-async function sendTelegramMessage(chatId: number, text: string): Promise<void> {
-  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-  await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text,
-      link_preview_options: { is_disabled: true }
-    })
-  });
 }
 
