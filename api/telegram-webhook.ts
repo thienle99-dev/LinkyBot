@@ -8,7 +8,7 @@ import {
 } from "./_lib/config.js";
 import { TELEGRAM_BOT_LINK, TELEGRAM_BOT_USERNAME } from "./_lib/telegram.js";
 import { isValidHttpUrl } from "./_lib/urlValidator.js";
-import { buildShortUrl, getShortLink, saveShortLink } from "./_lib/db.js";
+import * as db from "./_lib/db.js";
 import { generateShortCode } from "./_lib/shortCode.js";
 
 const URL_REGEX =
@@ -17,6 +17,10 @@ const URL_REGEX =
 const bot = new Telegraf(TELEGRAM_BOT_TOKEN);
 
 bot.start(async (ctx: Context) => {
+  if (ctx.from) {
+    await db.upsertTelegramUser(ctx.from);
+  }
+
   await ctx.reply(
     [
       `👋 Welcome to @${TELEGRAM_BOT_USERNAME}!`,
@@ -66,13 +70,18 @@ bot.on("text", async (ctx: Context) => {
 
   let code = generateShortCode();
   for (let i = 0; i < 3; i++) {
-    const existing = await getShortLink(code);
+    const existing = await db.getShortLink(code);
     if (!existing) break;
     code = generateShortCode();
   }
 
-  await saveShortLink(code, candidateUrl, "telegram");
-  const shortUrl = buildShortUrl(code);
+  // Save the user info first (or upsert)
+  if (ctx.from) {
+    await db.upsertTelegramUser(ctx.from);
+  }
+
+  await db.saveShortLink(code, candidateUrl, "telegram", ctx.from?.id);
+  const shortUrl = db.buildShortUrl(code);
 
   console.log("[shorten] link generated", {
     source: "telegram",

@@ -19,17 +19,45 @@ export interface LegacyShortLinkRecord {
   code: string;
 }
 
+export interface TelegramUserCtx {
+  id: number;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+  language_code?: string;
+}
+
+export async function upsertTelegramUser(user: TelegramUserCtx): Promise<void> {
+  const { error } = await supabase.from("telegram_users").upsert(
+    {
+      id: user.id,
+      username: user.username,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      language_code: user.language_code,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "id" }
+  );
+
+  if (error) {
+    console.error("Error upserting telegram user:", error);
+  }
+}
+
 export async function saveShortLink(
   code: string,
   longUrl: string,
-  source: "web" | "telegram"
+  source: "web" | "telegram",
+  telegramUserId?: number
 ): Promise<LegacyShortLinkRecord> {
   const { data, error } = await supabase
     .from("links")
     .insert({
       code,
       original_url: longUrl,
-      source
+      source,
+      telegram_user_id: telegramUserId,
     })
     .select()
     .single();
