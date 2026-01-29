@@ -31,6 +31,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const shortUrl = buildShortUrl(code);
 
+  console.log("[shorten] link generated", {
+    source: "web",
+    code,
+    shortUrl,
+    longUrl: url,
+    at: new Date().toISOString()
+  });
+
   return res.status(200).json({ code, shortUrl });
 }
 

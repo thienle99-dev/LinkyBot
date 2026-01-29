@@ -11,6 +11,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test:bot": "tsx scripts/test-bot.ts",
+    "test:bot:node": "node --loader ts-node/esm scripts/test-bot.ts",
     "webhook:set": "node scripts/set-webhook-production.js",
     "lint": "eslint . --ext .ts,.tsx,.vue --max-warnings=0",
     "typecheck": "tsc --noEmit"

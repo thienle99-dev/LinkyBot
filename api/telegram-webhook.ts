@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { Telegraf } from "telegraf";
 import type { Context } from "telegraf";
+import type { Message } from "telegraf/types";
 import {
   TELEGRAM_BOT_TOKEN,
   TELEGRAM_WEBHOOK_SECRET_TOKEN
@@ -47,7 +48,9 @@ bot.help(async (ctx: Context) => {
 });
 
 bot.on("text", async (ctx: Context) => {
-  const text = ctx.message?.text ?? "";
+  const message = ctx.message;
+  if (!message || !("text" in message)) return;
+  const text = (message as Message.TextMessage).text;
   if (!text) return;
 
   // Let /start and /help be handled by command handlers above
@@ -70,6 +73,15 @@ bot.on("text", async (ctx: Context) => {
 
   await saveShortLink(code, candidateUrl, "telegram");
   const shortUrl = buildShortUrl(code);
+
+  console.log("[shorten] link generated", {
+    source: "telegram",
+    code,
+    shortUrl,
+    longUrl: candidateUrl,
+    telegramUserId: ctx.from?.id,
+    at: new Date().toISOString()
+  });
 
   await ctx.reply(`✅ Short link created:\n${shortUrl}`, {
     link_preview_options: { is_disabled: true }
