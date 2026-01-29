@@ -83,7 +83,8 @@ bot.on("text", async (ctx: Context) => {
     at: new Date().toISOString()
   });
 
-  await ctx.reply(`✅ Short link created:\n${shortUrl}`, {
+  await ctx.reply(`✅ Short link created:\n\`${shortUrl}\``, {
+    parse_mode: "MarkdownV2",
     link_preview_options: { is_disabled: true }
   } as any);
 });
