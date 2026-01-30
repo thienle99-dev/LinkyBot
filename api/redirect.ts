@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { getShortLink } from "./_lib/db.js";
+import { getShortLink, incrementClickCount } from "./_lib/db.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const code = (req.query.code as string | undefined) ?? undefined;
@@ -13,6 +13,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!record) {
     return res.status(404).send("Not found");
   }
+
+  // Record click asynchronously
+  incrementClickCount(code).catch(console.error);
 
   // 302 by default; can be tuned to 301 if desired
   res.setHeader("Location", record.longUrl);

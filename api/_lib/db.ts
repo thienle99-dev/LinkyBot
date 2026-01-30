@@ -130,6 +130,27 @@ export async function getUserLinks(telegramUserId: number, limit = 10): Promise<
   }));
 }
 
+export async function incrementClickCount(code: string): Promise<void> {
+  // We use Supabase RPC for atomic increment if available, 
+  // or a standard update if not. 
+  // Recommended: Setup a PostgreSQL function:
+  // CREATE OR REPLACE FUNCTION increment_clicks(target_code TEXT)
+  // RETURNS void AS $$
+  // UPDATE links SET clicks = clicks + 1 WHERE code = target_code;
+  // $$ LANGUAGE sql;
+  
+  const { error } = await supabase.rpc('increment_link_clicks', { target_code: code });
+  
+  if (error) {
+    // Fallback if RPC is not defined
+    console.warn("RPC increment_link_clicks failed, falling back to manual update", error);
+    const { data: current } = await supabase.from("links").select("clicks").eq("code", code).single();
+    if (current) {
+      await supabase.from("links").update({ clicks: (current.clicks || 0) + 1 }).eq("code", code);
+    }
+  }
+}
+
 export function buildShortUrl(code: string): string {
   return `${APP_BASE_URL.replace(/\/$/, "")}/r/${code}`;
 }
