@@ -10,14 +10,14 @@
 
 ## 2. Phạm vi tính năng
 
-| Tính năng | Mô tả | Ưu tiên |
-|-----------|--------|---------|
-| **Danh sách links** | Bảng: code, long URL, short URL, source (web/telegram), created_at, clicks | P0 |
-| **Phân trang / tìm kiếm** | Phân trang, filter theo source, tìm theo code hoặc URL | P0 |
-| **Xóa link** | Nút xóa từng link, confirm trước khi xóa | P0 |
-| **Thống kê tổng quan** | Tổng số link, số link hôm nay, tổng clicks | P1 |
-| **Export** | Export danh sách (CSV/JSON) | P2 |
-| **Auth đơn giản** | Đăng nhập bằng password (env) hoặc Telegram Login | P0 |
+| Tính năng                 | Mô tả                                                                      | Ưu tiên |
+| ------------------------- | -------------------------------------------------------------------------- | ------- |
+| **Danh sách links**       | Bảng: code, long URL, short URL, source (web/telegram), created_at, clicks | P0      |
+| **Phân trang / tìm kiếm** | Phân trang, filter theo source, tìm theo code hoặc URL                     | P0      |
+| **Xóa link**              | Nút xóa từng link, confirm trước khi xóa                                   | P0      |
+| **Thống kê tổng quan**    | Tổng số link, số link hôm nay, tổng clicks                                 | P1      |
+| **Export**                | Export danh sách (CSV/JSON)                                                | P2      |
+| **Auth đơn giản**         | Đăng nhập bằng password (env) hoặc Telegram Login                          | P0      |
 
 ---
 
@@ -44,12 +44,12 @@
 
 **Base path:** `/api/admin/*`. Mọi route đều kiểm tra header `Authorization: Bearer <ADMIN_TOKEN>` hoặc cookie session.
 
-| Method | Path | Mô tả |
-|--------|------|--------|
-| POST | `/api/admin/auth` | Body `{ token }`. So sánh với `ADMIN_SECRET_TOKEN`, trả về JWT/session nếu đúng. |
-| GET | `/api/admin/links` | Query: `page`, `limit`, `source` (web \| telegram), `search` (code hoặc URL). Trả về danh sách links + total. |
-| DELETE | `/api/admin/links/:code` | Xóa link theo `code`. Trả về 204 hoặc 200. |
-| GET | `/api/admin/stats` | Trả về: `totalLinks`, `linksToday`, `totalClicks` (nếu có cột clicks). |
+| Method | Path                     | Mô tả                                                                                                         |
+| ------ | ------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| POST   | `/api/admin/auth`        | Body `{ token }`. So sánh với `ADMIN_SECRET_TOKEN`, trả về JWT/session nếu đúng.                              |
+| GET    | `/api/admin/links`       | Query: `page`, `limit`, `source` (web \| telegram), `search` (code hoặc URL). Trả về danh sách links + total. |
+| DELETE | `/api/admin/links/:code` | Xóa link theo `code`. Trả về 204 hoặc 200.                                                                    |
+| GET    | `/api/admin/stats`       | Trả về: `totalLinks`, `linksToday`, `totalClicks` (nếu có cột clicks).                                        |
 
 **Ví dụ response GET /api/admin/links**
 
@@ -134,8 +134,8 @@ api/
 
 ## 8. Biến môi trường
 
-| Biến | Mô tả |
-|------|--------|
+| Biến                 | Mô tả                                                    |
+| -------------------- | -------------------------------------------------------- |
 | `ADMIN_SECRET_TOKEN` | Chuỗi bí mật dùng làm "password" admin và để verify API. |
 
 Đặt trong Vercel Project Settings và `.env` local.
@@ -170,4 +170,18 @@ api/
 - **Frontend:** `/admin/login`, `/admin` (dashboard) với bảng links, stats, phân trang, filter, xóa.
 - **DB:** Giữ bảng `links` hiện tại; dùng Supabase với quyền đủ để đọc/xóa từ server.
 
-Sau khi làm xong bước 1–3, có thể mở rộng: Telegram Login Widget cho admin, export CSV, chỉnh sửa link (đổi destination URL).
+---
+
+## 11. Các tính năng đề xuất bổ sung (Roadmap)
+
+Dưới đây là các tính năng có thể triển khai tiếp theo để hoàn thiện hệ thống:
+
+| Nhóm tính năng         | Chi tiết                                                                                | Ưu tiên    | Status   |
+| ---------------------- | --------------------------------------------------------------------------------------- | ---------- | -------- |
+| **Analytics & Charts** | Biểu đồ tăng trưởng link và clicks (30 ngày gần nhất), top links được click nhiều nhất. | Cao        | **DONE** |
+| **Quản lý User**       | Danh sách user Telegram, xem số link từng người tạo, tính năng Ban/Unban.               | Trung bình | **DONE** |
+| **Admin Link Create**  | Form tạo link trực tiếp từ Admin, cho phép đặt **Custom Alias**.                        | Cao        | **DONE** |
+| **QR Code**            | Tự động tạo QR Code cho mỗi short link để tải về.                                       | Thấp       | **DONE** |
+| **Bulk Actions**       | Chọn nhiều link để xóa hoặc export hàng loạt.                                           | Trung bình | **DONE** |
+| **Bảo mật nâng cao**   | Tích hợp **Telegram Login Widget** thay cho Secret Token thủ công.                      | Trung bình | Planned  |
+| **Check-live**         | Hệ thống tự động kiểm tra link gốc (original URL) xem còn hoạt động không.              | Thấp       | Planned  |

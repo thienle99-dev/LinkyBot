@@ -74,11 +74,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (req.method === "DELETE") {
         const code = req.query.code as string;
-        if (!code) {
-            return res.status(400).json({ error: "Code is required" });
+        const codes = req.body?.codes as string[];
+
+        if (!code && (!codes || codes.length === 0)) {
+            return res.status(400).json({ error: "Code or codes array is required" });
         }
 
-        const { error } = await supabase.from("links").delete().eq("code", code);
+        let deleteQuery = supabase.from("links").delete();
+        
+        if (code) {
+            deleteQuery = deleteQuery.eq("code", code);
+        } else {
+            deleteQuery = deleteQuery.in("code", codes);
+        }
+
+        const { error } = await deleteQuery;
 
         if (error) {
             console.error(error);
@@ -88,6 +98,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ ok: true });
     }
 
-    res.setHeader("Allow", "GET, DELETE, PATCH");
+    if (req.method === "POST") {
+        const { original_url, code: customCode, source = "web" } = req.body;
+
+        if (!original_url) {
+            return res.status(400).json({ error: "Original URL is required" });
+        }
+
+        let code = customCode;
+        if (code) {
+            // Check if code exists
+            const { data: existing } = await supabase
+                .from("links")
+                .select("code")
+                .eq("code", code)
+                .single();
+
+            if (existing) {
+                return res.status(409).json({ error: "Custom code already exists" });
+            }
+        } else {
+            // Generate a random code if not provided
+            // For simplicity, we can use a helper or simple random string here
+            // But since this is a small app, let's assume we want a code
+            return res.status(400).json({ error: "Custom code is required for admin creation" });
+        }
+
+        const { data, error } = await supabase
+            .from("links")
+            .insert({
+                code,
+                original_url,
+                source
+            })
+            .select()
+            .single();
+
+        if (error) {
+            console.error(error);
+            return res.status(500).json({ error: error.message });
+        }
+
+        return res.status(201).json({ ok: true, data });
+    }
+
+    res.setHeader("Allow", "GET, DELETE, PATCH, POST");
     return res.status(405).json({ error: "Method Not Allowed" });
 }

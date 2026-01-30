@@ -42,13 +42,33 @@ export async function getLinks(params: { page: number; limit: number; search?: s
     return res.data;
 }
 
+export async function getAnalytics() {
+    const res = await api.get("/analytics");
+    return res.data;
+}
+
+export async function getUsers() {
+    const res = await api.get("/users");
+    return res.data;
+}
+
 export async function deleteLink(code: string) {
     const res = await api.delete(`/links?code=${code}`);
     return res.data;
 }
 
+export async function bulkDeleteLinks(codes: string[]) {
+    const res = await api.delete("/links", { data: { codes } });
+    return res.data;
+}
+
 export async function updateLink(code: string, original_url: string) {
     const res = await api.patch(`/links?code=${code}`, { original_url });
+    return res.data;
+}
+
+export async function createLink(data: { code: string; original_url: string; source?: string }) {
+    const res = await api.post("/links", data);
     return res.data;
 }
 
