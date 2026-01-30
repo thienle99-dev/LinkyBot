@@ -1,15 +1,28 @@
 <template>
   <div class="min-h-screen bg-[#f8fafc] dark:bg-[#020617] text-slate-900 dark:text-slate-100 flex flex-col md:flex-row overflow-hidden">
     <!-- Sidebar -->
-    <aside class="w-full md:w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-white/5 flex flex-col z-50">
-      <div class="p-8">
-        <div class="flex items-center gap-3 mb-10">
-          <div class="h-10 w-10 rounded-2xl bg-sky-500 flex items-center justify-center shadow-lg shadow-sky-500/20">
+    <aside 
+      class="bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-white/5 flex flex-col z-50 transition-all duration-500 ease-in-out relative group/sidebar"
+      :class="sidebarCollapsed ? 'w-24' : 'w-full md:w-80'"
+    >
+      <!-- Toggle Button -->
+      <button 
+        @click="sidebarCollapsed = !sidebarCollapsed"
+        class="absolute -right-3 top-10 h-6 w-6 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-400 hover:text-sky-500 shadow-sm z-[60] transition-all opacity-0 group-hover/sidebar:opacity-100 hidden md:flex"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-3 h-3 transition-transform duration-500" :class="{ 'rotate-180': sidebarCollapsed }">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+        </svg>
+      </button>
+
+      <div class="p-6 md:p-8">
+        <div class="flex items-center gap-3 mb-10 overflow-hidden">
+          <div class="h-10 w-10 shrink-0 rounded-2xl bg-sky-500 flex items-center justify-center shadow-lg shadow-sky-500/20">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-white">
               <path fill-rule="evenodd" d="M19.902 4.098a3.75 3.75 0 0 0-5.304 0l-4.5 4.5a3.75 3.75 0 0 0 1.035 6.037.75.75 0 0 1-.646 1.353 5.25 5.25 0 0 1-1.449-8.45l4.5-4.5a5.25 5.25 0 1 1 7.424 7.424l-1.757 1.757a.75.75 0 1 1-1.06-1.06l1.757-1.757a3.75 3.75 0 0 0 0-5.304Zm-7.389 4.267a.75.75 0 0 1 1-.353 5.25 5.25 0 0 1 1.449 8.45l-4.5 4.5a5.25 5.25 0 1 1-7.424-7.424l1.757-1.757a.75.75 0 1 1 1.06 1.06l-1.757 1.757a3.75 3.75 0 1 0 5.304 5.304l4.5-4.5a3.75 3.75 0 0 0-1.035-6.037.75.75 0 0 1-.354-1Z" clip-rule="evenodd" />
             </svg>
           </div>
-          <span class="text-xl font-black tracking-tighter">LINKY<span class="text-sky-500">BOT</span></span>
+          <span v-if="!sidebarCollapsed" class="text-xl font-black tracking-tighter transition-opacity duration-300">LINKY<span class="text-sky-500">BOT</span></span>
         </div>
 
         <nav class="space-y-1.5">
@@ -18,23 +31,32 @@
             :key="tab.id"
             @click="activeTab = tab.id"
             class="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 group"
-            :class="activeTab === tab.id 
-              ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25 translate-x-1' 
-              : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'"
+            :class="[
+              activeTab === tab.id 
+                ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/25 translate-x-1' 
+                : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white',
+              sidebarCollapsed ? 'justify-center px-0' : ''
+            ]"
+            :title="sidebarCollapsed ? tab.name : ''"
           >
-            <component :is="tab.icon" class="w-5 h-5 transition-transform group-hover:scale-110" />
-            {{ tab.name }}
-            <span v-if="tab.count !== undefined" class="ml-auto text-[10px] px-2 py-0.5 rounded-full font-black" :class="activeTab === tab.id ? 'bg-white/20' : 'bg-slate-100 dark:bg-white/5'">{{ tab.count }}</span>
+            <component :is="tab.icon" class="w-5 h-5 transition-transform group-hover:scale-110 shrink-0" />
+            <span v-if="!sidebarCollapsed" class="transition-all duration-300">{{ tab.name }}</span>
+            <span v-if="!sidebarCollapsed && tab.count !== undefined" class="ml-auto text-[10px] px-2 py-0.5 rounded-full font-black" :class="activeTab === tab.id ? 'bg-white/20' : 'bg-slate-100 dark:bg-white/5'">{{ tab.count }}</span>
           </button>
         </nav>
       </div>
 
-      <div class="mt-auto p-8 border-t border-slate-200 dark:border-white/5 mx-4">
-        <button @click="handleLogout" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all duration-300">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+      <div class="mt-auto p-6 md:p-8 border-t border-slate-200 dark:border-white/5 mx-4 overflow-hidden">
+        <button 
+          @click="handleLogout" 
+          class="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all duration-300 shrink-0"
+          :class="sidebarCollapsed ? 'justify-center px-0' : ''"
+          :title="sidebarCollapsed ? 'Sign Out' : ''"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 shrink-0">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
           </svg>
-          Sign Out
+          <span v-if="!sidebarCollapsed">Sign Out</span>
         </button>
       </div>
     </aside>
@@ -51,6 +73,8 @@
         </div>
 
         <div class="flex items-center gap-4">
+          <ThemeToggle />
+          <div class="h-8 w-px bg-slate-200 dark:bg-white/10 mx-2 hidden sm:block"></div>
           <button @click="openCreate" class="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-xl dark:shadow-white/5">
              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
                <path fill-rule="evenodd" d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" />
@@ -345,6 +369,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, reactive, markRaw } from "vue";
+import ThemeToggle from "../components/ThemeToggle.vue";
 import { 
   getStats, getLinks, deleteLink, bulkDeleteLinks, updateLink, createLink, 
   getAnalytics, getUsers, updateUserStatus, exportLinks, logout, verifyLink 
@@ -372,6 +397,7 @@ const search = ref("");
 const sourceFilter = ref("");
 const activeTab = ref('insights');
 const loading = ref(false);
+const sidebarCollapsed = ref(false);
 const selectedLinks = ref(new Set<string>());
 const deleting = ref<string | null>(null);
 const checkingLive = ref(false);

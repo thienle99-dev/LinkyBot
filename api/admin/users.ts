@@ -36,22 +36,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .from("telegram_users")
             .select(`
                 *,
-                is_banned,
-                links:links(count)
+                link_count:links(count)
             `)
             .order("updated_at", { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+            console.error("Supabase Error:", error);
+            return res.status(500).json({ 
+                error: "Database Query Failed", 
+                details: error.message,
+                hint: "Ensure 'is_banned' column exists in 'telegram_users' and 'links' table has 'telegram_user_id' foreign key."
+            });
+        }
 
         const users = (data ?? []).map(user => ({
             ...user,
-            link_count: user.links?.[0]?.count ?? 0
+            link_count: Array.isArray(user.link_count) ? user.link_count[0]?.count : (user.link_count?.count ?? 0)
         }));
 
         return res.status(200).json({ data: users });
 
     } catch (err: any) {
-        console.error(err);
-        return res.status(500).json({ error: "Failed to fetch users" });
+        console.error("Internal Server Error:", err);
+        return res.status(500).json({ error: err.message || "Failed to fetch users" });
     }
 }

@@ -4,6 +4,7 @@
   >
     <!-- Navigation Header -->
     <header
+      v-if="!$route.path.startsWith('/admin')"
       class="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur sticky top-0 z-50"
     >
       <div
@@ -47,17 +48,16 @@
 
     <!-- Main Content -->
     <main class="flex-1 flex flex-col">
-      <div class="max-w-5xl w-full mx-auto px-4 py-8">
-        <router-view v-slot="{ Component }">
-          <transition name="fade" mode="out-in">
-            <component :is="Component" />
-          </transition>
-        </router-view>
-      </div>
+      <router-view v-slot="{ Component }">
+        <transition name="fade" mode="out-in">
+          <component :is="Component" />
+        </transition>
+      </router-view>
     </main>
 
     <!-- Footer -->
     <footer
+      v-if="!$route.path.startsWith('/admin')"
       class="border-t border-slate-200 dark:border-slate-800 py-8 bg-slate-50/50 dark:bg-slate-900/50 mt-auto"
     >
       <div class="max-w-5xl mx-auto px-4 text-center">

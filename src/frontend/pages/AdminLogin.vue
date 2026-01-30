@@ -6,6 +6,9 @@
       <div
         class="relative overflow-hidden rounded-[2.5rem] border border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900 p-10 shadow-2xl shadow-sky-500/10 dark:shadow-none"
       >
+        <div class="absolute top-8 right-8 z-10">
+          <ThemeToggle />
+        </div>
         <!-- Decoration -->
         <div
           class="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-sky-500/5 blur-3xl"
@@ -123,6 +126,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
+import ThemeToggle from "../components/ThemeToggle.vue";
 import { login } from "../services/adminApi";
 
 const router = useRouter();
