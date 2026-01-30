@@ -11,44 +11,152 @@ import { isValidHttpUrl } from "./_lib/urlValidator.js";
 import * as db from "./_lib/db.js";
 import { generateShortCode } from "./_lib/shortCode.js";
 
+import {
+  createMainMenu,
+  createBackToMenuButton,
+  getMenuContent,
+  MENU_ACTIONS
+} from "./_lib/telegram-menu.js";
+
 const URL_REGEX =
   /(https?:\/\/[^\s/$.?#].[^\s]*)/i;
 
 const bot = new Telegraf(TELEGRAM_BOT_TOKEN);
 
+// Handle /start command
 bot.start(async (ctx: Context) => {
   if (ctx.from) {
     await db.upsertTelegramUser(ctx.from);
   }
 
   await ctx.reply(
-    [
-      `👋 Welcome to @${TELEGRAM_BOT_USERNAME}!`,
-      "",
-      "Send me any URL and I will reply with a short link.",
-      "",
-      `Bot link: ${TELEGRAM_BOT_LINK}`,
-      "",
-      "Example:",
-      "https://example.com/my/very/long/url"
-    ].join("\n"),
-    { link_preview_options: { is_disabled: true } } as any
+    `👋 Chào mừng @${ctx.from?.username || "bạn"} đến với @${TELEGRAM_BOT_USERNAME}!\n\n` +
+    getMenuContent("main"),
+    { 
+      ...createMainMenu(),
+      link_preview_options: { is_disabled: true } 
+    } as any
   );
 });
 
+// Handle /help command
 bot.help(async (ctx: Context) => {
   await ctx.reply(
-    [
-      "ℹ️ How to use this bot:",
-      "",
-      "1. Send a message that contains a valid http(s) URL.",
-      "2. I will validate it, create a short link, and reply back.",
-      "",
-      `Bot: @${TELEGRAM_BOT_USERNAME}`,
-      `Link: ${TELEGRAM_BOT_LINK}`
-    ].join("\n"),
-    { link_preview_options: { is_disabled: true } } as any
+    getMenuContent(MENU_ACTIONS.HELP),
+    { 
+      ...createBackToMenuButton(),
+      parse_mode: "Markdown",
+      link_preview_options: { is_disabled: true } 
+    } as any
   );
+});
+
+// Handle /menu command
+bot.command("menu", async (ctx: Context) => {
+  await ctx.reply(
+    getMenuContent("main"),
+    createMainMenu()
+  );
+});
+
+async function handleLinksCommand(ctx: Context) {
+  const userId = ctx.from?.id;
+  if (!userId) return;
+
+  const links = await db.getUserLinks(userId, 10);
+  
+  if (links.length === 0) {
+    await ctx.reply("💬 Bạn chưa tạo link nào. Hãy gửi cho tôi một URL để bắt đầu!", createMainMenu());
+    return;
+  }
+
+  const list = links.map((link, i) => {
+    const short = db.buildShortUrl(link.code);
+    return `${i + 1}. \`${short}\`\n   ↳ ${link.longUrl.substring(0, 40)}${link.longUrl.length > 40 ? '...' : ''}\n   📊 Clicks: \`${link.clicks || 0}\``;
+  }).join("\n\n");
+
+  await ctx.reply(`📋 **10 link gần đây của bạn:**\n\n${list}`, { 
+    parse_mode: "Markdown",
+    link_preview_options: { is_disabled: true }
+  } as any);
+}
+
+// Handle /links command
+bot.command("links", handleLinksCommand);
+
+// Handle callback queries
+bot.on("callback_query", async (ctx: Context) => {
+  const callbackQuery = ctx.callbackQuery;
+  if (!callbackQuery || !("data" in callbackQuery)) return;
+
+  const data = callbackQuery.data;
+  const chatId = ctx.chat?.id;
+  const fromId = ctx.from?.id;
+  const messageId = ctx.callbackQuery.message?.message_id;
+
+  if (!chatId || !messageId) return;
+
+  try {
+    if (data === MENU_ACTIONS.MAIN) {
+      await ctx.telegram.editMessageText(
+        chatId,
+        messageId,
+        undefined,
+        getMenuContent("main"),
+        { 
+          ...createMainMenu(),
+          parse_mode: "Markdown"
+        } as any
+      );
+    } else if (data === MENU_ACTIONS.MY_LINKS) {
+      if (!fromId) return;
+      const links = await db.getUserLinks(fromId, 10);
+      
+      if (links.length === 0) {
+        await ctx.telegram.editMessageText(
+          chatId,
+          messageId,
+          undefined,
+          "💬 Bạn chưa tạo link nào. Hãy gửi cho tôi một URL để bắt đầu!",
+          createBackToMenuButton()
+        );
+      } else {
+        const list = links.map((link, i) => {
+          const short = db.buildShortUrl(link.code);
+          return `${i + 1}. \`${short}\`\n   📈 Clicks: \`${link.clicks || 0}\``;
+        }).join("\n\n");
+
+        await ctx.telegram.editMessageText(
+          chatId,
+          messageId,
+          undefined,
+          `📋 **Top 10 link gần đây:**\n\n${list}`,
+          { 
+            ...createBackToMenuButton(),
+            parse_mode: "Markdown",
+            link_preview_options: { is_disabled: true }
+          } as any
+        );
+      }
+    } else {
+      await ctx.telegram.editMessageText(
+        chatId,
+        messageId,
+        undefined,
+        getMenuContent(data),
+        { 
+          ...createBackToMenuButton(),
+          parse_mode: "Markdown"
+        } as any
+      );
+    }
+
+    // Always answer callback queries
+    await ctx.answerCbQuery();
+  } catch (error) {
+    console.error("Error handling callback query:", error);
+    await ctx.answerCbQuery("Có lỗi xảy ra, vui lòng thử lại sau.");
+  }
 });
 
 bot.on("text", async (ctx: Context) => {
@@ -57,14 +165,14 @@ bot.on("text", async (ctx: Context) => {
   const text = (message as Message.TextMessage).text;
   if (!text) return;
 
-  // Let /start and /help be handled by command handlers above
-  if (text.startsWith("/start") || text.startsWith("/help")) return;
+  // Let core commands be handled by their respective handlers
+  if (text.startsWith("/start") || text.startsWith("/help") || text.startsWith("/menu")) return;
 
   const match = text.match(URL_REGEX);
   const candidateUrl = match?.[1];
 
   if (!candidateUrl || !isValidHttpUrl(candidateUrl)) {
-    await ctx.reply("❌ Please send a valid http(s) URL so I can create a short link.");
+    await ctx.reply("❌ Vui lòng gửi một URL hợp lệ (bắt đầu với http:// hoặc https://) để tôi rút gọn.");
     return;
   }
 

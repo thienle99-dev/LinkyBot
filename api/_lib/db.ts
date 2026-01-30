@@ -98,6 +98,27 @@ export async function getShortLink(
   };
 }
 
+export async function getUserLinks(telegramUserId: number, limit = 10): Promise<LegacyShortLinkRecord[]> {
+  const { data, error } = await supabase
+    .from("links")
+    .select("*")
+    .eq("telegram_user_id", telegramUserId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map(link => ({
+    longUrl: link.original_url,
+    createdAt: link.created_at,
+    source: link.source,
+    clicks: link.clicks,
+    code: link.code
+  }));
+}
+
 export function buildShortUrl(code: string): string {
   return `${APP_BASE_URL.replace(/\/$/, "")}/r/${code}`;
 }
