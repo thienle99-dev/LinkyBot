@@ -112,3 +112,32 @@ export async function getShortLink(
 export function buildShortUrl(code: string): string {
   return `${APP_BASE_URL.replace(/\/$/, "")}/r/${code}`;
 }
+
+export async function getUserRecentLinks(
+  telegramUserId: number,
+  limit: number = 5
+): Promise<LegacyShortLinkRecord[]> {
+  const { data, error } = await supabase
+    .from("links")
+    .select("*")
+    .eq("telegram_user_id", telegramUserId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("Error fetching user links:", error);
+    return [];
+  }
+
+  if (!data || data.length === 0) {
+    return [];
+  }
+
+  return data.map((link) => ({
+    longUrl: link.original_url,
+    createdAt: link.created_at,
+    source: link.source as "web" | "telegram",
+    clicks: link.clicks,
+    code: link.code,
+  }));
+}

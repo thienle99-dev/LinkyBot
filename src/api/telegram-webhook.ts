@@ -5,11 +5,21 @@ import {
 } from "../config/env";
 import { TELEGRAM_BOT_LINK, TELEGRAM_BOT_USERNAME } from "../config/telegram";
 import { isValidHttpUrl } from "../lib/urlValidator";
-import { buildShortUrl, getShortLink, saveShortLink } from "../lib/db";
+import {
+  buildShortUrl,
+  getShortLink,
+  saveShortLink,
+  getUserRecentLinks,
+  upsertTelegramUser
+} from "../lib/db";
 import { generateShortCode } from "../lib/shortCode";
 
 interface TelegramUser {
   id: number;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+  language_code?: string;
 }
 
 interface TelegramChat {
@@ -85,8 +95,76 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         "1. Send a message that contains a valid http(s) URL.",
         "2. I will validate it, create a short link, and reply back.",
         "",
+        "Commands:",
+        "/start - Welcome message",
+        "/help - Show this help",
+        "/links - View your recent links",
+        "",
         `Bot: @${TELEGRAM_BOT_USERNAME}`,
         `Link: ${TELEGRAM_BOT_LINK}`
+      ].join("\n")
+    );
+    return res.status(200).json({ ok: true });
+  }
+
+  if (text.startsWith("/links")) {
+    if (!message.from) {
+      await sendTelegramMessage(
+        message.chat.id,
+        "❌ Unable to identify user. Please try again."
+      );
+      return res.status(200).json({ ok: true });
+    }
+
+    // Lưu thông tin user nếu chưa có
+    await upsertTelegramUser({
+      id: message.from.id,
+      username: message.from.username,
+      first_name: message.from.first_name,
+      last_name: message.from.last_name,
+      language_code: message.from.language_code,
+    });
+
+    const links = await getUserRecentLinks(message.from.id, 5);
+
+    if (links.length === 0) {
+      await sendTelegramMessage(
+        message.chat.id,
+        [
+          "📋 Your Links",
+          "",
+          "You haven't created any links yet.",
+          "",
+          "Send me a URL to create your first short link!"
+        ].join("\n")
+      );
+      return res.status(200).json({ ok: true });
+    }
+
+    const linksText = links
+      .map((link, index) => {
+        const shortUrl = buildShortUrl(link.code);
+        const date = new Date(link.createdAt).toLocaleDateString("vi-VN", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        });
+        return [
+          `${index + 1}. ${shortUrl}`,
+          `   → ${truncateUrl(link.longUrl, 50)}`,
+          `   📅 ${date} | 👆 ${link.clicks || 0} clicks`,
+        ].join("\n");
+      })
+      .join("\n\n");
+
+    await sendTelegramMessage(
+      message.chat.id,
+      [
+        `📋 Your Recent Links (${links.length})`,
+        "",
+        linksText,
+        "",
+        `Total: ${links.length} link${links.length > 1 ? "s" : ""}`,
       ].join("\n")
     );
     return res.status(200).json({ ok: true });
@@ -103,6 +181,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ ok: true });
   }
 
+  // Lưu thông tin user nếu chưa có
+  if (message.from) {
+    await upsertTelegramUser({
+      id: message.from.id,
+      username: message.from.username,
+      first_name: message.from.first_name,
+      last_name: message.from.last_name,
+      language_code: message.from.language_code,
+    });
+  }
+
   let code = generateShortCode();
   for (let i = 0; i < 3; i++) {
     const existing = await getShortLink(code);
@@ -110,7 +199,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     code = generateShortCode();
   }
 
-  await saveShortLink(code, candidateUrl, "telegram");
+  await saveShortLink(
+    code,
+    candidateUrl,
+    "telegram",
+    message.from?.id
+  );
 
   const shortUrl = buildShortUrl(code);
 
@@ -137,3 +231,7 @@ async function sendTelegramMessage(chatId: number, text: string): Promise<void> 
   });
 }
 
+function truncateUrl(url: string, maxLength: number): string {
+  if (url.length <= maxLength) return url;
+  return url.substring(0, maxLength - 3) + "...";
+}

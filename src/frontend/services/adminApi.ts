@@ -46,3 +46,19 @@ export async function deleteLink(code: string) {
     const res = await api.delete(`/links?code=${code}`);
     return res.data;
 }
+
+export async function updateLink(code: string, original_url: string) {
+    const res = await api.patch(`/links?code=${code}`, { original_url });
+    return res.data;
+}
+
+export async function exportLinks() {
+    const res = await api.get("/export", { responseType: "blob" });
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `links-export-${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+}

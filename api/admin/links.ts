@@ -48,6 +48,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
     }
 
+    if (req.method === "PATCH") {
+        const code = req.query.code as string;
+        const { original_url } = req.body;
+
+        if (!code) {
+            return res.status(400).json({ error: "Code is required" });
+        }
+        if (!original_url) {
+            return res.status(400).json({ error: "Original URL is required" });
+        }
+
+        const { error } = await supabase
+            .from("links")
+            .update({ original_url })
+            .eq("code", code);
+
+        if (error) {
+            console.error(error);
+            return res.status(500).json({ error: error.message });
+        }
+
+        return res.status(200).json({ ok: true });
+    }
+
     if (req.method === "DELETE") {
         const code = req.query.code as string;
         if (!code) {
@@ -64,6 +88,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ ok: true });
     }
 
-    res.setHeader("Allow", "GET, DELETE");
+    res.setHeader("Allow", "GET, DELETE, PATCH");
     return res.status(405).json({ error: "Method Not Allowed" });
 }
