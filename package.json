@@ -21,7 +21,8 @@
     "@vueuse/core": "^14.1.0",
     "axios": "^1.7.9",
     "telegraf": "^4.16.3",
-    "vue": "^3.5.11"
+    "vue": "^3.5.11",
+    "vue-router": "^5.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

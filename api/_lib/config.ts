@@ -1,6 +1,7 @@
 export const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN ?? "";
 export const TELEGRAM_WEBHOOK_SECRET_TOKEN =
   process.env.TELEGRAM_WEBHOOK_SECRET_TOKEN ?? "";
+export const ADMIN_SECRET_TOKEN = process.env.ADMIN_SECRET_TOKEN ?? "";
 
 export const APP_BASE_URL =
   process.env.APP_BASE_URL ?? "https://sl0.vercel.app";
