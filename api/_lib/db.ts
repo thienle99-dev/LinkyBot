@@ -27,6 +27,17 @@ export interface TelegramUserCtx {
   language_code?: string;
 }
 
+export async function isUserBanned(userId: number): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("telegram_users")
+    .select("is_banned")
+    .eq("id", userId)
+    .single();
+
+  if (error || !data) return false;
+  return !!data.is_banned;
+}
+
 export async function upsertTelegramUser(user: TelegramUserCtx): Promise<void> {
   const { error } = await supabase.from("telegram_users").upsert(
     {

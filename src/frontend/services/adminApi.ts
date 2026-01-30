@@ -52,6 +52,11 @@ export async function getUsers() {
     return res.data;
 }
 
+export async function updateUserStatus(id: number | string, isBanned: boolean) {
+    const res = await api.patch(`/users?id=${id}`, { is_banned: isBanned });
+    return res.data;
+}
+
 export async function deleteLink(code: string) {
     const res = await api.delete(`/links?code=${code}`);
     return res.data;
@@ -64,6 +69,11 @@ export async function bulkDeleteLinks(codes: string[]) {
 
 export async function updateLink(code: string, original_url: string) {
     const res = await api.patch(`/links?code=${code}`, { original_url });
+    return res.data;
+}
+
+export async function verifyLink(url: string) {
+    const res = await api.post("/check-live", { url });
     return res.data;
 }
 

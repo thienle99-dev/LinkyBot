@@ -126,6 +126,7 @@
           </div>
           <div class="flex items-center gap-3">
             <button @click="handleBulkDelete" class="px-4 py-2 rounded-xl bg-rose-500/10 text-rose-500 text-xs font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all">Delete All</button>
+            <button @click="handleBulkCheck" class="px-4 py-2 rounded-xl bg-sky-500/10 text-sky-500 text-xs font-black uppercase tracking-widest hover:bg-sky-500 hover:text-white transition-all" :disabled="checkingLive">Verify Links</button>
             <button @click="selectedLinks.clear()" class="px-4 py-2 rounded-xl bg-white/5 text-slate-400 text-xs font-black uppercase tracking-widest hover:bg-white/10 transition-all">Deselect</button>
           </div>
         </div>
@@ -175,6 +176,7 @@
             <th class="px-6 py-5">Destination</th>
                   <th class="px-6 py-5 text-center">Source</th>
                   <th class="px-6 py-5 text-center">Clicks</th>
+                  <th class="px-6 py-5 text-center">Status</th>
                   <th class="px-6 py-5">Created</th>
                   <th class="px-6 py-5 text-right">Actions</th>
                 </tr>
@@ -203,6 +205,15 @@
                     <span class="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider" :class="link.source === 'telegram' ? 'bg-blue-500/10 text-blue-500' : 'bg-slate-500/10 text-slate-500'">{{ link.source }}</span>
                   </td>
                   <td class="px-6 py-5 text-center font-bold">{{ link.clicks }}</td>
+                  <td class="px-6 py-5 text-center">
+                    <div class="flex flex-col items-center">
+                      <span v-if="liveStatuses[link.code]" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase transition-all" :class="liveStatuses[link.code].ok ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'">
+                        <span class="h-1.5 w-1.5 rounded-full" :class="liveStatuses[link.code].ok ? 'bg-emerald-500' : 'bg-rose-500'"></span>
+                        {{ liveStatuses[link.code].ok ? 'Live' : 'Dead' }}
+                      </span>
+                      <button v-else @click="onCheckLive(link)" class="text-[10px] font-bold text-slate-400 hover:text-sky-500 transition-colors uppercase tracking-widest" :disabled="checkingLive">Verify</button>
+                    </div>
+                  </td>
                   <td class="px-6 py-5"><div class="flex flex-col"><span class="text-slate-700 dark:text-slate-300 font-medium">{{ formatDate(link.created_at) }}</span><span class="text-[10px] text-slate-400 uppercase tracking-widest">{{ formatTime(link.created_at) }}</span></div></td>
                   <td class="px-6 py-5 text-right">
                     <div class="flex items-center justify-end gap-2">
@@ -245,7 +256,8 @@
                   <th class="px-6 py-5">User</th>
                   <th class="px-6 py-5 text-center">ID</th>
                   <th class="px-6 py-5 text-center">Links</th>
-                  <th class="px-6 py-5 text-right">Last Activity</th>
+                  <th class="px-6 py-5 text-center">Status</th>
+                  <th class="px-6 py-5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 dark:divide-white/[0.03]">
@@ -253,7 +265,25 @@
                   <td class="px-6 py-5"><div class="flex items-center gap-3"><div class="h-10 w-10 rounded-full bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold">{{ (user.first_name?.[0] || '?').toUpperCase() }}</div><div class="flex flex-col"><span class="font-bold border-slate-900">{{ user.first_name }} {{ user.last_name || '' }}</span><span class="text-xs text-sky-500">@{{ user.username || 'n/a' }}</span></div></div></td>
                   <td class="px-6 py-5 text-center font-mono">{{ user.id }}</td>
                   <td class="px-6 py-5 text-center font-bold">{{ user.link_count }}</td>
-                  <td class="px-6 py-5 text-right text-slate-500">{{ formatDate(user.updated_at) }}</td>
+                  <td class="px-6 py-5 text-center">
+                    <span v-if="user.is_banned" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-rose-500/10 text-rose-500">
+                      <span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>
+                      Banned
+                    </span>
+                    <span v-else class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-500">
+                      <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                      Active
+                    </span>
+                  </td>
+                  <td class="px-6 py-5 text-right">
+                    <button 
+                      @click="handleUserStatus(user.id, !user.is_banned)" 
+                      class="px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                      :class="user.is_banned ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white' : 'bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white'"
+                    >
+                      {{ user.is_banned ? 'Unban' : 'Ban' }}
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -314,7 +344,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, reactive } from "vue";
-import { getStats, getLinks, deleteLink, bulkDeleteLinks, updateLink, createLink, getAnalytics, getUsers, exportLinks, logout } from "../services/adminApi";
+import { getStats, getLinks, deleteLink, bulkDeleteLinks, updateLink, createLink, getAnalytics, getUsers, updateUserStatus, exportLinks, logout, verifyLink } from "../services/adminApi";
 import {
   Chart as ChartJS, Title, Tooltip, Legend, LineElement, LinearScale, PointElement, CategoryScale, Filler
 } from 'chart.js';
@@ -335,11 +365,47 @@ const activeTab = ref('links');
 const loading = ref(false);
 const selectedLinks = ref(new Set<string>());
 const deleting = ref<string | null>(null);
+const checkingLive = ref(false);
+const liveStatuses = reactive<Record<string, { ok: boolean, status: number | null }>>({});
 const toast = ref("");
 
 const editModal = reactive({ show: false, code: "", url: "", saving: false });
 const createModal = reactive({ show: false, code: "", url: "", saving: false });
 const qrModal = reactive({ show: false, code: "" });
+
+async function onCheckLive(link: any) {
+  if (checkingLive.value) return;
+  try {
+    const res = await verifyLink(link.original_url);
+    liveStatuses[link.code] = res;
+  } catch (e) {}
+}
+
+async function handleBulkCheck() {
+  if (checkingLive.value) return;
+  checkingLive.value = true;
+  const codes = Array.from(selectedLinks.value);
+  showToast(`Checking ${codes.length} links...`);
+  
+  for (const code of codes) {
+    const link = links.value.find(l => l.code === code);
+    if (link) await onCheckLive(link);
+  }
+  
+  checkingLive.value = false;
+  showToast("Scan finished!");
+}
+
+async function handleUserStatus(id: any, isBanned: boolean) {
+  if (!confirm(`${isBanned ? 'Ban' : 'Unban'} this user?`)) return;
+  try {
+    await updateUserStatus(id, isBanned);
+    showToast(`User ${isBanned ? 'banned' : 'unbanned'}`);
+    await fetchData(true);
+  } catch (e) {
+    alert("Action failed");
+  }
+}
 
 let searchTimeout: any;
 function debounceSearch() {

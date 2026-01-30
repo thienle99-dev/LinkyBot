@@ -23,6 +23,19 @@ const URL_REGEX =
 
 const bot = new Telegraf(TELEGRAM_BOT_TOKEN);
 
+// Middleware to check if user is banned
+bot.use(async (ctx, next) => {
+  if (ctx.from) {
+    const banned = await db.isUserBanned(ctx.from.id);
+    if (banned) {
+      if (ctx.callbackQuery) await ctx.answerCbQuery("❌ Tài khoản của bạn đã bị khóa.");
+      else await ctx.reply("❌ Tài khoản của bạn đã bị khóa. Vui lòng liên hệ admin để biết thêm chi tiết.");
+      return;
+    }
+  }
+  return next();
+});
+
 // Handle /start command
 bot.start(async (ctx: Context) => {
   if (ctx.from) {
